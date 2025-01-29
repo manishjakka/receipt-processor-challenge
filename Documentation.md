@@ -161,13 +161,13 @@ The `docker-compose.yml` file orchestrates the deployment of all services (NGINX
     ```bash
     docker-compose logs -f
 
-
 ### Request Flow
-  - A client sends a request to http://localhost (handled by NGINX).
-  - NGINX forwards the request to one of the Flask replicas based on the load balancing policy.
+  - A client sends a request to [http://localhost](http://localhost) (handled by NGINX).
+  - NGINX forwards the request to one of the Flask replicas based on the load-balancing policy.
   - The Flask app processes the request and interacts with the PostgreSQL database.
-  - NGINX adds debugging headers (e.g., X-Backend-Server) to responses for tracing.
+  - NGINX adds debugging headers (e.g., `X-Backend-Server`) to responses for tracing.
 
+---
 
 ## Key Features
 
@@ -185,34 +185,36 @@ The `docker-compose.yml` file orchestrates the deployment of all services (NGINX
   - PostgreSQL database is available.
   - Unhealthy services are not included in the request routing.
 
-
 ### Data Persistence
-  - PostgreSQL data is stored in a persistent volume (db-data).
+  - PostgreSQL data is stored in a persistent volume (`db-data`).
   - This ensures no data is lost during container restarts or recreations.
-
 
 ### Request Metadata Logging
   
-  Every request (POST or GET) is logged with the following metadata:
+  Every request (`POST` or `GET`) is logged with the following metadata:
   
   - Flask container name
   - Flask container port
-  - Request type (GET or POST)
+  - Request type (`GET` or `POST`)
   - Timestamp of the request
   
   This helps with debugging and monitoring.
 
+---
 
 ## Testing
   
+### **Check NGINX Health**
   To test if the NGINX load balancer is operational, use:
 
-  bash```
+  ```bash
   curl http://localhost/health
 
-  To process a receipt, send a POST request to the /receipts/process endpoint:
+### **Process a Receipt**
 
-  bash```
+  To process a receipt, send a `POST` request to the `/receipts/process` endpoint:
+
+  ```bash
   curl -X POST http://localhost/receipts/process \
   -H "Content-Type: application/json" \
   -d '{
@@ -226,12 +228,18 @@ The `docker-compose.yml` file orchestrates the deployment of all services (NGINX
       ]
   }'
 
+
+---
+
+
 ### Get Points for a Receipt
 
   - To retrieve the points for a processed receipt, send a GET request to the /receipts/<receipt_id>/points endpoint. Replace <receipt_id> with the actual receipt ID.
 
-  bash```
+  ```bash
   curl -X GET http://localhost/receipts/<receipt_id>/points
+
+---
 
 ### Notes
 
