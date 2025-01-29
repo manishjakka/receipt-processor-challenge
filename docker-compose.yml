@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    deploy:
+      replicas: 3  # Scale Flask to 3 replicas
+    environment:
+      - FLASK_PORT=5000  # Internal port for Flask
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=flaskuser
+      - DB_PASSWORD=flaskpassword
+      - DB_NAME=receipts_db
+    expose:
+      - "5000"  # Expose Flask's internal port to the app-network (not exposed to the host)
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import http.client; conn = http.client.HTTPConnection('localhost', 5000); conn.request('GET', '/health'); res = conn.getresponse(); exit(0) if res.status == 200 else exit(1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-network
+
+  nginx-load-balancer:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"  # NGINX listens on port 80
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro  # Mount NGINX configuration file
+    depends_on:
+      - flask-app
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: flaskuser
+      POSTGRES_PASSWORD: flaskpassword
+      POSTGRES_DB: receipts_db
+    volumes:
+      - db-data:/var/lib/postgresql/data  # Persistent volume for database
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flaskuser -d receipts_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
